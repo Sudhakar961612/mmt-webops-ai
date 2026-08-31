@@ -1,0 +1,34 @@
+{
+  "name": "mmt-webops-ai-server",
+  "version": "1.0.0",
+  "description": "Backend for MakeMyTrip Autonomous Web Operations Agent",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js",
+    "seed": "node seed/seedDemo.js",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.4.0",
+    "express-validator": "^7.1.0",
+    "helmet": "^7.1.0",
+    "jsdom": "^24.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.5.1",
+    "node-cron": "^3.0.3",
+    "pino": "^9.3.2",
+    "playwright": "^1.45.3"
+  },
+  "devDependencies": {
+    "mongodb-memory-server": "^9.4.1",
+    "pino-pretty": "^11.2.1",
+    "supertest": "^7.0.0",
+    "vitest": "^2.0.5"
+  }
+}

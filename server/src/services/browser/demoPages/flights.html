@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MakeMyTrip Demo — Flights DEL → BOM</title>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Arial, sans-serif; }
+  body { margin: 0; background: #f5f7fb; color: #1f2937; }
+  header { background: linear-gradient(90deg, #0f3a8c, #1a56db); color: #fff; padding: 18px 28px; }
+  header h1 { margin: 0; font-size: 20px; }
+  header small { opacity: .85; }
+  .wrap { max-width: 960px; margin: 22px auto; padding: 0 16px; }
+  .meta { display: flex; justify-content: space-between; color: #6b7280; font-size: 13px; margin-bottom: 14px; }
+  .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 18px; margin-bottom: 14px;
+          box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+  .row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .airline { font-weight: 700; }
+  .stops { color: #6b7280; font-size: 13px; }
+  .price { font-size: 22px; font-weight: 800; color: #0f3a8c; }
+  .pill { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; }
+  .seat-ok { background: #d1fae5; color: #065f46; }
+  .seat-low { background: #fef3c7; color: #92400e; }
+  .seat-none { background: #fee2e2; color: #991b1b; }
+  .updated { color: #6b7280; font-size: 12px; margin-top: 8px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>✈️ MakeMyTrip — Flights: New Delhi → Mumbai</h1>
+  <small>Live demo page · DEMO MODE · data refreshes on every visit</small>
+</header>
+<div class="wrap">
+  <div class="meta">
+    <span id="route"></span>
+    <span id="updated"></span>
+  </div>
+  <div id="list"></div>
+</div>
+<script type="application/json" id="__DATA__">{}</script>
+<script>
+(function () {
+  // ---- GeoMath-style live demo data, seeded by current time so each load differs.
+  var airlines = ['Vistara', 'IndiGo', 'Air India', 'SpiceJet', 'Akasa Air'];
+  var fleet = [['Vistara','UK 861'],['IndiGo','6E 2342'],['Air India','AI 864'],['SpiceJet','SG 8157'],['Akasa Air','QP 1523']];
+  var base = Math.floor(Date.now() / 1000);
+  // 5 flights, prices drift with the second so consecutive runs differ.
+  function seeded(n) { var x = Math.sin(n * 9301 + base) * 10000; return x - Math.floor(x); }
+  var flights = [];
+  for (var i = 0; i < 5; i++) {
+    var jit = Math.round((seeded(i) - 0.5) * 3000);
+    var price = Math.max(2999, Math.round((4800 + i * 650 + jit + 50) / 10) * 10);
+    var seats = Math.min(9, Math.max(0, Math.round(seeded(i + 9) * 9)));
+    flights.push({
+      flightNo: fleet[i][1], airline: fleet[i][0],
+      departure: '06:35', arrival: '08:55',
+      stops: i % 4 === 0 ? '1 stop (via BLR)' : 'Non-stop',
+      price: '₹' + price.toLocaleString('en-IN'), priceValue: price,
+      seatsAvailable: seats, rating: (3.6 + seeded(i + 3)).toFixed(1),
+      date: new Date().toISOString().slice(0, 10)
+    });
+  }
+  var payload = { updatedAt: new Date().toISOString(), currency: 'INR', flights: flights };
+  var jsonEl = document.getElementById('__DATA__');
+  jsonEl.textContent = JSON.stringify({ data: payload });
+
+  document.getElementById('route').textContent = '🌆 DEL → 🌆 BOM · ' + payload.flights.length + ' results';
+  document.getElementById('updated').textContent = 'Updated ' + new Date(payload.updatedAt).toLocaleTimeString();
+
+  var list = document.getElementById('list');
+  payload.flights.forEach(function (f) {
+    var seatClass = f.seatsAvailable === 0 ? 'seat-none' : (f.seatsAvailable <= 2 ? 'seat-low' : 'seat-ok');
+    var seatLabel = f.seatsAvailable === 0 ? 'Sold out' : (f.seatsAvailable + ' seats left');
+    var card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML =
+      '<div class="row">' +
+        '<div><span class="airline">' + f.airline + '</span> · ' + f.flightNo +
+          '<div class="stops">' + f.departure + ' → ' + f.arrival + ' · ' + f.stops + ' · ★ ' + f.rating + '</div></div>' +
+        '<div><span class="price">' + f.price + '</span></div>' +
+      '</div>' +
+      '<div class="row" style="margin-top:10px"><span class="pill ' + seatClass + '">' + seatLabel + '</span>' +
+        '<span class="updated">' + f.date + '</span></div>';
+    list.appendChild(card);
+  });
+})();
+</script>
+</body>
+</html>

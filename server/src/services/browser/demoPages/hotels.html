@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MakeMyTrip Demo — Goa Hotels</title>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Arial, sans-serif; }
+  body { margin: 0; background: #f5f7fb; color: #1f2937; }
+  header { background: linear-gradient(90deg, #0f766e, #14b8a6); color: #fff; padding: 18px 28px; }
+  header h1 { margin: 0; font-size: 20px; }
+  header small { opacity: .85; }
+  .wrap { max-width: 920px; margin: 22px auto; padding: 0 16px; }
+  .meta { display: flex; justify-content: space-between; color: #6b7280; font-size: 13px; margin-bottom: 14px; }
+  .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 18px; margin-bottom: 14px;
+          box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+  .name { font-weight: 700; font-size: 16px; }
+  .loc { color: #6b7280; font-size: 13px; }
+  .price { font-size: 22px; font-weight: 800; color: #0f766e; }
+  .pill { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; }
+  .avail-ok { background: #d1fae5; color: #065f46; }
+  .avail-low { background: #fef3c7; color: #92400e; }
+  .avail-none { background: #fee2e2; color: #991b1b; }
+  .updated { color: #6b7280; font-size: 12px; margin-top: 8px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🏨 MakeMyTrip — Hotels: Goa (North)</h1>
+  <small>Live demo page · DEMO MODE · data refreshes on every visit</small>
+</header>
+<div class="wrap">
+  <div class="meta"><span id="route"></span><span id="updated"></span></div>
+  <div id="list"></div>
+</div>
+<script type="application/json" id="__DATA__">{}</script>
+<script>
+(function () {
+  var names = ['The Crown Goa', 'Bay Breeze Resort', 'Palm Grove Villa', 'Sea Pearl Beach House', 'Amara Wellness Stay'];
+  var areas = ['Baga Beach', 'Calangute', 'Anjuna', 'Candolim', 'Vagator'];
+  var base = Math.floor(Date.now() / 1000);
+  function seeded(n) { var x = Math.sin(n * 7717 + base) * 10000; return x - Math.floor(x); }
+  var hotels = [];
+  for (var i = 0; i < 5; i++) {
+    var jit = Math.round((seeded(i) - 0.5) * 2400);
+    var price = Math.max(1999, Math.round((3600 + i * 900 + jit) / 10) * 10);
+    var rooms = Math.min(8, Math.max(0, Math.round(seeded(i + 5) * 8)));
+    hotels.push({
+      name: names[i], area: areas[i],
+      pricePerNight: '₹' + price.toLocaleString('en-IN'), priceValue: price,
+      rating: (3.7 + seeded(i + 2 + i)).toFixed(1),
+      roomsAvailable: rooms, ratingValue: (3.7 + seeded(i + 2)).toFixed(1),
+      guestRating: (88 - Math.round(seeded(i + 1) * 10)) + '%',
+      date: new Date().toISOString().slice(0, 10)
+    });
+  }
+  var payload = { updatedAt: new Date().toISOString(), currency: 'INR', hotels: hotels };
+  document.getElementById('__DATA__').textContent = JSON.stringify({ data: payload });
+
+  document.getElementById('route').textContent = '📍 Goa · ' + payload.hotels.length + ' properties';
+  document.getElementById('updated').textContent = 'Updated ' + new Date(payload.updatedAt).toLocaleTimeString();
+
+  var list = document.getElementById('list');
+  payload.hotels.forEach(function (h) {
+    var availClass = h.roomsAvailable === 0 ? 'avail-none' : (h.roomsAvailable <= 2 ? 'avail-low' : 'avail-ok');
+    var availLabel = h.roomsAvailable === 0 ? 'No rooms' : (h.roomsAvailable + ' rooms left');
+    var card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML =
+      '<div class="row">' +
+        '<div><span class="name">' + h.name + '</span><div class="loc">' + h.area + ' · ★ ' + h.rating +
+          ' · ' + h.guestRating + ' guest rating</div></div>' +
+        '<div><span class="price">' + h.pricePerNight + '</span><div class="loc">/ night</div></div>' +
+      '</div>' +
+      '<div class="row" style="margin-top:12px"><span class="pill ' + availClass + '">' + availLabel + '</span>' +
+        '<span class="updated">' + h.date + '</span></div>';
+    list.appendChild(card);
+  });
+})();
+</script>
+</body>
+</html>
