@@ -21,7 +21,10 @@ export const env = {
   PORT: int(process.env.PORT, 5000),
   MONGODB_URI: process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/mmt-webops-ai',
   AUTO_MONGODB_MEMORY: bool(process.env.AUTO_MONGODB_MEMORY, false),
-  CLIENT_ORIGIN: process.env.CLIENT_ORIGIN || 'http://localhost:5173',
+  // Keep local development working while allowing the production frontend when
+  // Render is deployed before its environment variables have been configured.
+  // Set CLIENT_ORIGIN explicitly in production; it accepts comma-separated URLs.
+  CLIENT_ORIGIN: process.env.CLIENT_ORIGIN || 'http://localhost:5173,https://mmt-webops-ai.vercel.app',
   JWT_SECRET: process.env.JWT_SECRET || 'dev-insecure-secret-change-me',
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '7d',
   DEMO_MODE: bool(process.env.DEMO_MODE, true),

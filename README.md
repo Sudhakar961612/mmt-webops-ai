@@ -347,9 +347,20 @@ git push origin main
 # - Start: npm start --workspace server
 # - Add env vars (MONGODB_URI, AI_API_KEY, JWT_SECRET)
 
-# 4. Update Vercel env var
+# 4. In Vercel → Project → Settings → Environment Variables, add this for
+#    Production (and Preview if you use preview deployments), then redeploy.
+#    Do not use the Vercel frontend URL here.
 # VITE_API_BASE_URL=https://your-backend.render.com/api
+#
+# 5. In Render, set CLIENT_ORIGIN to the exact Vercel frontend URL, for example:
+# CLIENT_ORIGIN=https://mmt-webops-ai.vercel.app
 ```
+
+The Vite development proxy exists only on `localhost`. If `VITE_API_BASE_URL`
+is missing from a production frontend build, the browser sends login requests to
+`https://your-frontend-host/api/auth/login`; a static frontend deployment has no
+such route and returns 404. `VITE_API_BASE_URL` is embedded during the build, so
+redeploy the frontend after setting or changing it.
 
 See **[deployment.md](docs/deployment.md)** for step-by-step guides, Docker, Kubernetes options.
 
