@@ -4,20 +4,11 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { getErrorMessage } from '../api/client.js';
 import Icon from '../components/Icons.jsx';
 
-// Demo accounts shown behind a clearly-labelled collapsible section. These are
-// reference/demo credentials only — never production secrets.
-const DEMO_ACCOUNTS = [
-  { role: 'Admin', username: 'admin@mmt.local', password: 'Admin@Secure#2026!' },
-  { role: 'Manager', username: 'manager@mmt.local', password: 'Manager@Secure#2026!' },
-  { role: 'Analyst', username: 'analyst@mmt.local', password: 'Analyst@Secure#2026!' },
-];
-
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [form, setForm] = useState({ identifier: '', password: '' });
-  const [showDemo, setShowDemo] = useState(false);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -76,53 +67,18 @@ export default function Login() {
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
               autoComplete='current-password'
-              placeholder='••••••••'
+              placeholder='********'
               required
             />
           </div>
           <button
             disabled={busy}
             className='w-full bg-brand-600 hover:bg-brand-500 text-white font-medium py-2.5 rounded-lg disabled:opacity-60 transition-colors'>
-            {busy ? 'Signing in…' : 'Sign in'}
+            {busy ? 'Signing in...' : 'Sign in'}
           </button>
         </form>
 
-        <p className='mt-4 text-sm text-center text-gray-500'>
-          Sign in with your assigned account.
-        </p>
-
-        <div className='mt-5 border-t border-gray-100 pt-4'>
-          <button
-            type='button'
-            onClick={() => setShowDemo((v) => !v)}
-            className='w-full flex items-center justify-between text-sm text-gray-600 hover:text-gray-800'>
-            <span className='inline-flex items-center gap-1.5'>
-              <Icon name='sparkle' size={15} /> Demo credentials
-            </span>
-            <span className={`transition-transform ${showDemo ? 'rotate-180' : ''}`}>
-              <Icon name='chevron' size={16} />
-            </span>
-          </button>
-          {showDemo && (
-            <div className='mt-3 space-y-2 bg-amber-50 border border-amber-200 rounded-lg p-3'>
-              <p className='text-xs text-amber-800'>
-                Reference accounts for the review. MMT WebOps AI demo only — these are not
-                production credentials.
-              </p>
-              {DEMO_ACCOUNTS.map((a) => (
-                <button
-                  key={a.role}
-                  type='button'
-                  onClick={() => setForm({ identifier: a.username, password: a.password })}
-                  className='w-full flex items-center justify-between text-xs text-left px-3 py-2 bg-white rounded-lg border border-amber-200 hover:border-amber-400'>
-                  <span className='font-semibold text-amber-900'>{a.role}</span>
-                  <span className='text-gray-500 font-mono'>{a.username}</span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
+        <p className='mt-4 text-sm text-center text-gray-500'>Sign in with your assigned account.</p>
         <div className='mt-4 text-sm text-center'>
           <Link to='/register' className='text-brand-600 hover:underline'>
             Create an account

@@ -151,15 +151,12 @@ BROWSER_HEADLESS=true
 JWT_SECRET=dev-secret-change-in-production
 ```
 
-### 3. Seed Demo Data
+### 3. Seed Local Demo Pages (Optional)
 ```bash
 npm run seed
 ```
 
-**Demo users created:**
-- `admin@mmt.local / Admin@Secure#2026!` (admin)
-- `manager@mmt.local / Manager@Secure#2026!` (manager)
-- `analyst@mmt.local / Analyst@Secure#2026!` (analyst)
+No user accounts are seeded. Create an account from the registration page before signing in.
 
 ### 4. Start Development Servers
 ```bash
@@ -172,8 +169,8 @@ This starts:
 
 ### 5. Try It Out
 1. Open http://localhost:5173
-2. Login as `analyst@mmt.local / Analyst@Secure#2026!`
-3. Go to **Tasks** → Click a sample task
+2. Create an account, then sign in
+3. Go to **Tasks** and create a task
 4. Click **Run now**
 5. Watch the browser execute (demo page loads, data extracts)
 6. After ~5 seconds, view the **Extracted Data**
@@ -700,4 +697,3 @@ npm run test        # server Vitest unit + integration tests
 
 ## 📜 License
 Internal reference project for demonstration and learning purposes.
-
