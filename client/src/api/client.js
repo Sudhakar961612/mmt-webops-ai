@@ -1,6 +1,9 @@
 import axios from 'axios';
 
-const api = axios.create({ baseURL: '/api' });
+// Locally, Vite proxies the relative path to the Express server. In production,
+// set VITE_API_BASE_URL to the deployed backend URL, including its /api suffix.
+const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '');
+const api = axios.create({ baseURL: configuredApiBaseUrl || '/api' });
 
 // Attach the JWT to every request.
 api.interceptors.request.use((config) => {
