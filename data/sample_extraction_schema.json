@@ -1,0 +1,12 @@
+{
+  "name": "Hotel pricing schema",
+  "schemaType": "pricing",
+  "targetSelector": "body",
+  "repeatingSelector": "",
+  "fields": [
+    { "name": "hotel_name", "type": "string", "selector": ".hotel-name", "isRequired": true, "normalization": { "transform": "trim" } },
+    { "name": "price_value", "type": "number", "selector": ".price", "isRequired": true, "validation": { "minValue": 0 }, "normalization": { "transform": "parseFloat" } },
+    { "name": "rating", "type": "number", "selector": ".rating", "isRequired": false, "validation": { "minValue": 0, "maxValue": 5 }, "normalization": { "transform": "parseFloat" } },
+    { "name": "rooms_available", "type": "number", "selector": ".rooms", "isRequired": false, "normalization": { "transform": "parseFloat" } }
+  ]
+}

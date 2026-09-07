@@ -76,7 +76,12 @@ export default function RunTimeline({ run }) {
                     {comp.status === 'AWAITING_APPROVAL' ? 'Pending approval' : approvalDone ? 'Approved' : comp.rejected ? 'Rejected' : '—'}
                   </Badge>
                 )}
-                {failedHere && comp.failed && <Badge tone="red">Failed — see error below</Badge>}
+                {failedHere && comp.failed && (
+                  <>
+                    <Badge tone="red">Failed — see error below</Badge>
+                    {run.errorCode && <Badge tone="red">{run.errorCode}</Badge>}
+                  </>
+                )}
               </div>
               <div className="text-xs text-gray-400 mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5">
                 {step.key === 'accepted' && <span>{formatTime(run.createdAt)}</span>}
@@ -101,6 +106,7 @@ export function RunStatusSummary({ run }) {
   return (
     <div className="flex flex-wrap items-center gap-2">
       <Badge tone={runTone(run.status)} dot>{run.status}</Badge>
+      {run.errorCode && <Badge tone="red">{run.errorCode}</Badge>}
       {run.trigger && <span className="text-xs text-gray-400 uppercase">trigger: {run.trigger}</span>}
     </div>
   );

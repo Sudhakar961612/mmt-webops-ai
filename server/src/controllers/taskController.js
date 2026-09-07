@@ -6,7 +6,7 @@ import { isValidCron } from '../services/schedulerService.js';
 import logAudit from '../services/auditService.js';
 
 export const createTask = asyncHandler(async (req, res) => {
-  const { name, description, type, target, extractors, schedule, autoApprove } = req.body;
+  const { name, description, type, target, extractors, extractionSchema, schedule, autoApprove } = req.body;
 
   if (schedule && !isValidCron(schedule)) {
     throw badRequest(`Invalid cron expression: ${schedule}`);
@@ -26,6 +26,7 @@ export const createTask = asyncHandler(async (req, res) => {
     type: type || 'generic',
     target,
     extractors: extractors || {},
+    extractionSchema: extractionSchema || null,
     schedule: schedule || '',
     autoApprove: Boolean(autoApprove),
     owner: req.user.id,
@@ -68,7 +69,7 @@ export const updateTask = asyncHandler(async (req, res) => {
   if (!['admin', 'manager'].includes(req.user.role) && task.owner.toString() !== req.user.id) {
     throw new ApiError(403, 'You do not have access to this task');
   }
-  const { name, description, type, target, extractors, schedule, autoApprove } = req.body;
+  const { name, description, type, target, extractors, extractionSchema, schedule, autoApprove } = req.body;
   if (schedule !== undefined && schedule !== '' && !isValidCron(schedule)) {
     throw badRequest(`Invalid cron expression: ${schedule}`);
   }
@@ -81,6 +82,7 @@ export const updateTask = asyncHandler(async (req, res) => {
   if (type !== undefined) task.type = type;
   if (target !== undefined) task.target = target;
   if (extractors !== undefined) task.extractors = extractors;
+  if (extractionSchema !== undefined) task.extractionSchema = extractionSchema || null;
   if (schedule !== undefined) task.schedule = schedule;
   if (autoApprove !== undefined) task.autoApprove = Boolean(autoApprove);
   await task.save();

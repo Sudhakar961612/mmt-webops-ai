@@ -22,6 +22,7 @@ import Templates from './pages/Templates.jsx';
 import Schemas from './pages/Schemas.jsx';
 import AuditLog from './pages/AuditLog.jsx';
 import DemoPages from './pages/DemoPages.jsx';
+import OpsLab from './pages/OpsLab.jsx';
 
 export default function App() {
   return (
@@ -54,6 +55,7 @@ export default function App() {
           <Route path="/schemas" element={<Schemas />} />
           <Route path="/audit" element={<AuditLog />} />
           <Route path="/demo" element={<DemoPages />} />
+          <Route path="/ops" element={<OpsLab />} />
         </Route>
         <Route path="*" element={<Login />} />
       </Routes>

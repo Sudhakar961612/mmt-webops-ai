@@ -22,6 +22,7 @@ const runSchema = new mongoose.Schema(
     startedAt: { type: Date },
     finishedAt: { type: Date },
     error: { type: String, default: '' },
+    errorCode: { type: String, default: '' },
     // Links to downstream artifacts
     snapshot: { type: mongoose.Schema.Types.ObjectId, ref: 'Snapshot' },
     changes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Change' }],

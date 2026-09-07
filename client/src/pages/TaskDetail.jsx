@@ -534,6 +534,7 @@ export default function TaskDetail() {
           <KeyValue label="Plan steps" value={Array.isArray(task?.plan) && task?.plan.length ? `${task.plan.length} steps` : '—'} />
           <KeyValue label="Created" value={formatDate(task?.createdAt)} />
           <KeyValue label="Updated" value={formatDate(task?.updatedAt)} />
+          <KeyValue label="Extraction schema" value={task?.extractionSchema?.name || (task?.extractionSchema ? String(task.extractionSchema).slice(-8) : '—')} />
         </dl>
         {task?.extractors && Object.keys(task.extractors).length > 0 && (
           <div className="px-5 pb-4">
@@ -564,16 +565,23 @@ export default function TaskDetail() {
           title="Latest run"
           subtitle={`Most recent execution · ${timeAgo(latestRun.createdAt || latestRun.startedAt)}`}
           action={
-            <Link to={`/runs/${latestRun._id}`} className="inline-flex items-center gap-1 text-xs text-brand-600 hover:text-brand-500 font-medium">
-              View run details <Icon name="chevron" size={14} />
-            </Link>
+            <div className="flex items-center gap-3">
+              <a href={`/api/exports/runs/${latestRun._id}?format=json`} className="text-xs text-brand-600 hover:underline">Export JSON</a>
+              <a href={`/api/exports/runs/${latestRun._id}?format=csv`} className="text-xs text-brand-600 hover:underline">Export CSV</a>
+              <Link to={`/runs/${latestRun._id}`} className="inline-flex items-center gap-1 text-xs text-brand-600 hover:text-brand-500 font-medium">
+                View run details <Icon name="chevron" size={14} />
+              </Link>
+            </div>
           }
         >
           <div className="px-5 py-4">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-4">
               <div>
                 <div className="text-xs uppercase tracking-wide text-gray-400">Status</div>
-                <div className="mt-1"><Badge tone={runTone(latestRun.status)} dot>{latestRun.status}</Badge></div>
+                <div className="mt-1 flex items-center gap-2 flex-wrap">
+                  <Badge tone={runTone(latestRun.status)} dot>{latestRun.status}</Badge>
+                  {latestRun.errorCode && <Badge tone="red" size="xs">{latestRun.errorCode}</Badge>}
+                </div>
               </div>
               <div>
                 <div className="text-xs uppercase tracking-wide text-gray-400">Started</div>
@@ -631,7 +639,12 @@ export default function TaskDetail() {
                 {runs.map((r, i) => (
                   <tr key={r._id} className="hover:bg-gray-50">
                     <td className="px-4 py-3 text-gray-400">{runs.length - i}</td>
-                    <td className="px-4 py-3"><Badge tone={runTone(r.status)} dot>{r.status}</Badge></td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-1.5">
+                        <Badge tone={runTone(r.status)} dot>{r.status}</Badge>
+                        {r.errorCode && <Badge tone="red" size="xs">{r.errorCode}</Badge>}
+                      </div>
+                    </td>
                     <td className="px-4 py-3 capitalize text-gray-600">{r.trigger}</td>
                     <td className="px-4 py-3 text-gray-500">{formatDate(r.startedAt || r.createdAt)}</td>
                     <td className="px-4 py-3 text-gray-500">{durationMs(r.startedAt, r.finishedAt) || '—'}</td>

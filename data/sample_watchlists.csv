@@ -1,0 +1,6 @@
+name,target,category,schedule,expected_fields,owner_team
+Competitor Diwali offers,demo:offers,competitor,0 6 * * *,offer_title;price;cta;validity,growth
+Goa hotel pricing watch,demo:hotels,hotel_pricing,0 9 * * *,hotel_name;price_value;rating;rooms_available,ops
+Campaign landing check,https://example.com/campaigns/diwali,campaign_page,,headline;offer_text;cta,marketing
+Partner announcements,demo:partner,partner_update,0 8 * * *,update_title;content;published_at,partnerships
+Goa demand scan,demo:hotels,travel_trend,0 7 * * 1,destination;price_value;availability,business

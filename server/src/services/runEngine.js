@@ -6,14 +6,25 @@ import { Insight } from '../models/Insight.js';
 import { generatePlan } from './agent/plannerService.js';
 import { reviewPlan } from './agent/reviewerService.js';
 import { generateInsight } from './agent/reasonerService.js';
-import { withBrowser, gotoPage, takeScreenshot } from './browser/playwrightService.js';
+import { withBrowser, gotoPage, takeScreenshot, dismissOverlays } from './browser/playwrightService.js';
 import { resolveTarget, assertNavigableTarget, assertSafeExternalUrl } from './browser/resolveTarget.js';
-import { readEmbeddedJson, extractBySelectors, contentHash } from './extractionService.js';
+import { readEmbeddedJson, extractBySelectors, extractWithSchema, normalizeFieldValue, contentHash } from './extractionService.js';
 import { diffSnapshots } from './comparisonService.js';
 import logAudit from './auditService.js';
 import { notifierService } from './notifierService.js';
 import { ApiError, notFound } from '../utils/ApiError.js';
+import { env } from '../config/env.js';
 import logger from '../utils/logger.js';
+
+/** Cap screenshot bytes stored in MongoDB; larger ones are dropped with a flag. */
+export function toStorableScreenshot(buf) {
+  if (!buf) return { screenshot: '', truncated: false, bytes: 0 };
+  const bytes = buf.length;
+  if (bytes > env.SCREENSHOT_MAX_BYTES) {
+    return { screenshot: '', truncated: true, bytes };
+  }
+  return { screenshot: `data:image/jpeg;base64,${buf.toString('base64')}`, truncated: false, bytes };
+}
 
 /**
  * Steps 1-3: create a plan for a task and register a run.
@@ -112,19 +123,70 @@ export async function executeRun(runOrId, user = null) {
     }
 
     // --- Browser execution (navigate, wait, extract, screenshot) ---
+    // Schema (if task.extractionSchema set) takes precedence over legacy
+    // selector maps; embedded JSON remains the demo-page default.
+    let extractionSchemaDoc = null;
+    if (task.extractionSchema) {
+      try {
+        const { ExtractionSchema } = await import('../models/ExtractionSchema.js');
+        extractionSchemaDoc = await ExtractionSchema.findById(task.extractionSchema);
+      } catch {
+        extractionSchemaDoc = null;
+      }
+    }
     const extracted = await withBrowser(async (page) => {
       await gotoPage(page, url);
       // Let the demo page's JS populate the embedded JSON.
       await page.waitForTimeout(1500);
+      await dismissOverlays(page).catch(() => {});
       const screenshotBuf = await takeScreenshot(page);
       const title = await page.title().catch(() => '');
       let data;
-      if (task.extractors && Object.keys(task.extractors).length) {
-        data = await extractBySelectors(page, task.extractors);
+      let fieldMeta = {};
+      let extractionConfidence = null;
+      let extractionWarnings = [];
+      let extractionMode = 'embedded-json';
+      if (extractionSchemaDoc && extractionSchemaDoc.fields?.length) {
+        const result = await extractWithSchema(page, extractionSchemaDoc);
+        data = result.data;
+        fieldMeta = result.fieldMeta;
+        extractionConfidence = result.confidence;
+        extractionWarnings = result.warnings;
+        extractionMode = `schema:${extractionSchemaDoc.name}`;
+        // Fall back to embedded JSON for empty schema results (demo pages).
+        if (!data || Object.values(data).every((v) => v === null || v === '')) {
+          data = await readEmbeddedJson(page, '__DATA__');
+          extractionMode = 'embedded-json(fallback)';
+        }
+      } else if (task.extractors && Object.keys(task.extractors).length) {
+        // Legacy map may be { field: selector } or { fields: {...} }.
+        const selectorMap = task.extractors.fields || task.extractors;
+        data = await extractBySelectors(page, selectorMap);
+        extractionMode = 'selectors';
       } else {
         data = await readEmbeddedJson(page, '__DATA__');
       }
-      return { data, title, screenshot: screenshotBuf ? `data:image/jpeg;base64,${screenshotBuf.toString('base64')}` : '' };
+      // Normalize currency/date-ish top-level fields best-effort.
+      if (data && typeof data === 'object' && !Array.isArray(data)) {
+        for (const [k, v] of Object.entries(data)) {
+          if (/price|fare|rate|amount|cost/i.test(k) && typeof v === 'string') {
+            const n = normalizeFieldValue(v, { type: 'number' });
+            if (typeof n === 'number') data[k] = n;
+          }
+        }
+      }
+      const storable = toStorableScreenshot(screenshotBuf);
+      return {
+        data,
+        title,
+        screenshot: storable.screenshot,
+        screenshotTruncated: storable.truncated,
+        screenshotBytes: storable.bytes,
+        fieldMeta,
+        extractionConfidence,
+        extractionWarnings,
+        extractionMode,
+      };
     });
 
     run.status = 'EXTRACTING';
@@ -139,8 +201,22 @@ export async function executeRun(runOrId, user = null) {
       extractedData: extracted.data,
       screenshot: extracted.screenshot,
       contentHash: contentHash(extracted.data),
-      meta: { demoMode: true, currency: extracted.data?.currency },
+      meta: {
+        demoMode: typeof resolution.source === 'string' && resolution.source.startsWith('demo:'),
+        currency: extracted.data?.currency,
+        extractionMode: extracted.extractionMode,
+        extractionConfidence: extracted.extractionConfidence,
+        fieldMeta: extracted.fieldMeta || {},
+        extractionWarnings: (extracted.extractionWarnings || []).slice(0, 20),
+        screenshotTruncated: Boolean(extracted.screenshotTruncated),
+        screenshotBytes: extracted.screenshotBytes || 0,
+      },
     });
+    // Track schema usage for operations quality metrics.
+    if (extractionSchemaDoc) {
+      extractionSchemaDoc.usageCount = (extractionSchemaDoc.usageCount || 0) + 1;
+      await extractionSchemaDoc.save().catch(() => {});
+    }
     run.snapshot = snapshot._id;
     await run.save();
 
@@ -225,6 +301,7 @@ export async function executeRun(runOrId, user = null) {
   } catch (err) {
     run.status = 'FAILED';
     run.error = err.message;
+    run.errorCode = err.code || err.statusCode || 'RUN_FAILED';
     run.finishedAt = new Date();
     await run.save().catch(() => {});
     task.status = 'FAILED';
@@ -236,11 +313,11 @@ export async function executeRun(runOrId, user = null) {
       action: 'run.failed',
       entityType: 'ExecutionRun',
       entityId: run._id,
-      details: { error: err.message, task: task._id?.toString() },
+      details: { error: err.message, code: run.errorCode, task: task._id?.toString() },
       status: 'error',
       ip: user?.ip,
     });
-    logger.error({ run: run._id, err: err.message }, 'Run failed');
+    logger.error({ run: run._id, err: err.message, code: run.errorCode }, 'Run failed');
     throw err;
   }
 }

@@ -114,7 +114,7 @@ export default function Layout() {
                 }
               >
                 <span className={`w-1.5 h-1.5 rounded-full ${ai === true ? 'bg-emerald-500' : ai === false ? 'bg-amber-500' : 'bg-gray-400'}`} />
-                <span className="hidden sm:inline">{ai === true ? 'AI Connected' : ai === false ? 'AI · Fallback' : '…'}</span>
+                <span className="hidden sm:inline">{ai === true ? 'Gemini configured' : ai === false ? 'AI · Fallback' : '…'}</span>
               </span>
               <div className="hidden md:flex items-center gap-2 pl-2 border-l border-gray-200">
                 <span className="text-sm font-medium text-gray-700">{user?.username}</span>

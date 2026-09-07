@@ -156,17 +156,19 @@ export async function generateInsight(task, changes, snapshotData) {
   const fallback = buildFallbackInsight(task, changes, snapshotData);
   let source = 'fallback';
 
-  if (changes.length > 0) {
-    const aiText = await generateText(
-      `Here are changes detected on page "${task.name}":\n${changes
+  const changeDetails = changes.length
+    ? changes
         .map((c) => `- ${c.field}: ${c.type} (${JSON.stringify(c.previousValue)} -> ${JSON.stringify(c.currentValue)})`)
-        .join('\n')}\n` +
-        `Write a concise business insight (2-3 sentences) explaining what changed and why it matters.`
-    );
-    if (aiText) {
-      source = 'ai';
-      fallback.summary = aiText.trim();
-    }
+        .join('\n')
+    : 'No field-level changes were detected between the current and previous snapshots.';
+  const aiText = await generateText(
+    `Monitoring task: "${task.name}".\n${changeDetails}\n` +
+      'Write a concise business insight (2-3 sentences) explaining the outcome and why it matters. ' +
+      'If there are no changes, state that clearly and explain the operational implication.'
+  );
+  if (aiText) {
+    source = 'ai';
+    fallback.summary = aiText.trim();
   }
 
   logger.info({ task: task._id, changes: changes.length, source }, 'Insight generated');

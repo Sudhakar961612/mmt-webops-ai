@@ -32,6 +32,20 @@ export async function connectDB(uri = null) {
     logger.info({ uri: mongoose.connection.host }, 'MongoDB connected');
     return mongoose.connection;
   } catch (err) {
+    // Fall back to in-memory MongoDB when explicitly enabled so a broken or
+    // unreachable Atlas/local URI never takes the whole backend down in dev.
+    if (!uri && env.AUTO_MONGODB_MEMORY) {
+      logger.warn({ err: err.message }, 'MongoDB connection failed, falling back to in-memory MongoDB');
+      try {
+        connectionUri = await startMemoryMongo();
+        await mongoose.connect(connectionUri, { serverSelectionTimeoutMS: 8000 });
+        logger.info({ uri: mongoose.connection.host }, 'MongoDB connected (in-memory fallback)');
+        return mongoose.connection;
+      } catch (fallbackErr) {
+        logger.error({ err: fallbackErr.message }, 'In-memory MongoDB fallback failed');
+        throw fallbackErr;
+      }
+    }
     logger.error({ err: err.message }, 'MongoDB connection failed');
     throw err;
   }

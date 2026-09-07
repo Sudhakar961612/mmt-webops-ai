@@ -1,7 +1,8 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import api, { getErrorMessage } from '../api/client.js';
+import api, { getErrorMessage, downloadExport } from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useToast } from '../context/ToastContext.jsx';
 import Badge, { runTone } from '../components/Badge.jsx';
 import Icon from '../components/Icons.jsx';
 import { PageHeader, Card, Button, ErrorBanner } from '../components/ui.jsx';
@@ -13,10 +14,12 @@ import { formatDate, durationMs } from '../lib/format.js';
 export default function RunDetail() {
   const { id } = useParams();
   const { user } = useAuth();
+  const toast = useToast();
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
   const [feedback, setFeedback] = useState({ rating: 4, comment: '' });
   const [fbMsg, setFbMsg] = useState('');
+  const [opBusy, setOpBusy] = useState('');
 
   const load = useCallback(async () => {
     setError('');
@@ -57,6 +60,33 @@ export default function RunDetail() {
 
   const { run, snapshot, changes, insight, feedback: feedbackList } = data;
   const isManager = ['admin', 'manager'].includes(user?.role);
+  const meta = snapshot?.meta || {};
+  const warnings = meta.extractionWarnings || [];
+
+  const exportRun = async (format) => {
+    setOpBusy(`export-${format}`);
+    try {
+      await downloadExport(`/exports/runs/${id}?format=${format}`, `run-${id}.${format}`);
+      toast.success(`Exported run as ${format.toUpperCase()}.`);
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Export failed'));
+    } finally {
+      setOpBusy('');
+    }
+  };
+
+  const regenerate = async () => {
+    setOpBusy('regenerate');
+    try {
+      await api.post('/complete', { runId: id, regenerateInsight: true });
+      toast.success('Insight regenerated.');
+      await load();
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Could not regenerate insight'));
+    } finally {
+      setOpBusy('');
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -67,7 +97,14 @@ export default function RunDetail() {
         title={`Run · ${run?._id?.slice(-8)}`}
         subtitle={run?.task?.name || 'Task'}
         meta={`${formatDate(run?.createdAt)} · ${run?.trigger || 'manual'} trigger`}
-        action={<Button variant="secondary" size="sm" onClick={load}><Icon name="refresh" size={16} /> Refresh</Button>}
+        action={
+          <div className="flex items-center gap-2">
+            <Button variant="secondary" size="sm" onClick={() => exportRun('json')} disabled={!!opBusy}>Export JSON</Button>
+            <Button variant="secondary" size="sm" onClick={() => exportRun('csv')} disabled={!!opBusy}>Export CSV</Button>
+            {isManager && <Button variant="secondary" size="sm" onClick={regenerate} disabled={!!opBusy}>{opBusy === 'regenerate' ? 'Working…' : 'Regenerate insight'}</Button>}
+            <Button variant="secondary" size="sm" onClick={load}><Icon name="refresh" size={16} /> Refresh</Button>
+          </div>
+        }
       />
       {error && <ErrorBanner message={error} onRetry={load} />}
 
@@ -75,7 +112,10 @@ export default function RunDetail() {
         <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
           <div className="text-xs uppercase tracking-wide text-gray-400">Status</div>
           <div className="mt-1"><Badge tone={runTone(run?.status)} dot>{run?.status}</Badge></div>
+          {run?.errorCode && <div className="mt-2"><Badge tone="red" size="xs">{run.errorCode}</Badge></div>}
           {run?.error && <div className="text-xs text-red-600 mt-2 flex items-start gap-1"><Icon name="alert" size={13} /> {run.error}</div>}
+          {run?.errorCode === 'NAV_TIMEOUT' && <div className="text-xs text-gray-500 mt-1">Page timed out — retry or raise BROWSER_TIMEOUT_MS.</div>}
+          {run?.errorCode === 'NAV_BLOCKED' && <div className="text-xs text-gray-500 mt-1">Target blocked or denied — check source allowlist.</div>}
         </div>
         <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
           <div className="text-xs uppercase tracking-wide text-gray-400">Changes</div>
@@ -130,14 +170,29 @@ export default function RunDetail() {
             </Card>
           )}
 
-          <Card title="Extracted data" subtitle="Human-readable results for this run"
+          <Card title="Extracted data" subtitle={`Human-readable results · mode: ${meta.extractionMode || '—'}${typeof meta.extractionConfidence === 'number' ? ` · confidence ${Math.round(meta.extractionConfidence * 100)}%` : ''}`}
             action={snapshot?.url ? <a href={snapshot.url} target="_blank" rel="noreferrer" className="text-xs text-brand-600 hover:underline">Open source</a> : null}>
             <div className="px-5 py-4 border-b border-gray-100">
               <div className="flex flex-wrap gap-x-6 gap-y-1 text-xs text-gray-500 mb-3">
                 <span>Source: <span className="font-mono">{snapshot?.url || run?.task?.target || '—'}</span></span>
                 <span>Snapshot: {formatDate(snapshot?.createdAt)}</span>
               </div>
-              <ExtractedDataTable data={snapshot?.extractedData} type={run?.task?.type} />
+              {meta.screenshotTruncated && (
+                <div className="mb-3 bg-amber-50 border border-amber-200 text-amber-800 rounded-lg px-3 py-2 text-xs">
+                  Screenshot dropped — exceeded backend cap ({Math.round((meta.screenshotBytes || 0) / 1024)} KB). Data is unaffected.
+                </div>
+              )}
+              {warnings.length > 0 && (
+                <div className="mb-3 bg-amber-50 border border-amber-200 text-amber-800 rounded-lg px-3 py-2 text-xs space-y-0.5">
+                  <div className="font-medium">Extraction warnings ({warnings.length})</div>
+                  <ul className="list-disc list-inside">
+                    {warnings.slice(0, 5).map((w, i) => (
+                      <li key={i}>{w.field ? `${w.field}: ` : ''}{w.issue}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              <ExtractedDataTable data={snapshot?.extractedData} type={run?.task?.type} fieldMeta={meta.fieldMeta} />
             </div>
             {snapshot?.screenshot && (
               <a href={snapshot.screenshot} target="_blank" rel="noreferrer">

@@ -29,6 +29,9 @@ const taskSchema = new mongoose.Schema(
     target: { type: String, required: true, trim: true },
     // Optional structured extractors, e.g. { price: '#price', ... }
     extractors: { type: mongoose.Schema.Types.Mixed, default: {} },
+    // Optional reusable extraction schema (ExtractionSchema _id). When set,
+    // runEngine extracts + validates against it and records per-field confidence.
+    extractionSchema: { type: mongoose.Schema.Types.ObjectId, ref: 'ExtractionSchema', default: null },
     // Optional cron expression for scheduled runs (e.g. "*/5 * * * *")
     schedule: { type: String, default: '' },
     // When true, a freshly-generated plan runs immediately without manual approval.

@@ -20,7 +20,10 @@ export default function PlanReview({ task, pendingRun, canApprove, onDone }) {
   const plan = task?.plan || pendingRun?.plan || [];
   const review = pendingRun?.review || null;
   const generatedAt = pendingRun?.createdAt || task?.updatedAt;
-  const isAiPlan = pendingRun?.source === 'ai' || task?.planSource === 'ai';
+  // Backend returns plan source transiently ({ plan, source }) and reviewer
+  // identity in review.reviewer ('ai' | 'rule-engine'); neither is stored on
+  // the run/task documents, so fall back to 'fallback' display.
+  const isAiPlan = review?.reviewer === 'ai' || pendingRun?.planSource === 'ai' || task?.planSource === 'ai';
 
   const execute = async (type) => {
     const { runId } = confirm;
@@ -93,7 +96,6 @@ export default function PlanReview({ task, pendingRun, canApprove, onDone }) {
         <thead>
           <tr className="text-left text-xs uppercase tracking-wide text-gray-400">
             <th className="px-3 py-2 font-medium">#</th>
-            <th className="px-3 py-2 font-medium">Step</th>
             <th className="px-3 py-2 font-medium">Action</th>
             <th className="px-3 py-2 font-medium">Description</th>
             <th className="px-3 py-2 font-medium">Target URL</th>
@@ -109,7 +111,6 @@ export default function PlanReview({ task, pendingRun, canApprove, onDone }) {
                   <span className="w-1.5 h-1.5 rounded-full bg-brand-500" /> {s.action}
                 </span>
               </td>
-              <td className="px-3 py-2.5 text-gray-600">{s.action}</td>
               <td className="px-3 py-2.5 text-gray-600">{s.description}</td>
               <td className="px-3 py-2.5 text-gray-500">{s.url ? <code className="text-xs">{s.url}</code> : '—'}</td>
               <td className="px-3 py-2.5 text-gray-500">{s.params?.fields?.join(', ') || '—'}</td>

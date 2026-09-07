@@ -31,4 +31,22 @@ export function getErrorMessage(err, fallback = 'Something went wrong') {
   return err?.response?.data?.message || err?.message || fallback;
 }
 
+/** Download a backend export (JSON payload or CSV/attachment) as a file. */
+export async function downloadExport(path, fallbackFilename = 'export') {
+  const res = await api.get(path, { responseType: 'blob' });
+  const disposition = res.headers?.['content-disposition'] || '';
+  const match = disposition.match(/filename="?([^";]+)"?/);
+  const filename = match?.[1] || fallbackFilename;
+  const blob = new Blob([res.data], { type: res.headers?.['content-type'] || 'application/octet-stream' });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.URL.revokeObjectURL(url);
+  return filename;
+}
+
 export default api;

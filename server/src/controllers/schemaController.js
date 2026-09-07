@@ -124,34 +124,19 @@ export const testExtractionSchema = asyncHandler(async (req, res) => {
     throw new ApiError(404, 'Extraction schema not found');
   }
 
-  // Parse HTML and extract according to schema
-  const { JSDOM } = await import('jsdom');
-  const dom = new JSDOM(html);
-  const document = dom.window.document;
+  // Parse HTML and extract according to schema (shared pipeline so the
+  // test endpoint matches production runEngine behavior).
+  const { extractFromHtml } = await import('../services/extractionService.js');
+  const { data: results, confidence, warnings: validationWarnings } = await extractFromHtml(html, schema);
 
-  const results = {};
-  const errors = [];
-
+  const errors = validationWarnings
+    .filter((w) => w.confidence < 0.6)
+    .map((w) => `${w.issue} (confidence ${w.confidence})`);
+  // Surface missing required fields explicitly even when confidence heuristic passes.
   for (const field of schema.fields) {
-    try {
-      const element = document.querySelector(field.selector);
-      if (!element) {
-        results[field.name] = null;
-        if (field.isRequired) {
-          errors.push(`Required field "${field.name}" not found (selector: ${field.selector})`);
-        }
-      } else {
-        let value = element.textContent.trim();
-
-        // Apply normalization
-        if (field.normalization?.transform === 'uppercase') value = value.toUpperCase();
-        if (field.normalization?.transform === 'lowercase') value = value.toLowerCase();
-        if (field.normalization?.transform === 'trim') value = value.trim();
-
-        results[field.name] = value;
-      }
-    } catch (err) {
-      errors.push(`Error extracting "${field.name}": ${err.message}`);
+    if (field.isRequired && (results[field.name] === null || results[field.name] === undefined || results[field.name] === '')) {
+      const msg = `Required field "${field.name}" not found (selector: ${field.selector})`;
+      if (!errors.includes(msg)) errors.push(msg);
     }
   }
 
@@ -169,6 +154,8 @@ export const testExtractionSchema = asyncHandler(async (req, res) => {
     data: {
       results,
       errors,
+      warnings: validationWarnings,
+      confidence,
       accuracy: errors.length === 0 ? 100 : Math.max(0, 100 - errors.length * 10),
     },
   });

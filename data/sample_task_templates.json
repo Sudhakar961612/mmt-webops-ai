@@ -1,0 +1,29 @@
+[
+  {
+    "name": "Hotel pricing watch",
+    "category": "hotel_pricing",
+    "taskType": "hotel_monitor",
+    "targetPattern": "demo:hotels",
+    "extractors": {},
+    "defaultSchedule": "0 9 * * *",
+    "defaultAutoApprove": false
+  },
+  {
+    "name": "Competitor offer tracking",
+    "category": "competitor_offer",
+    "taskType": "price_monitor",
+    "targetPattern": "demo:offers",
+    "extractors": {},
+    "defaultSchedule": "0 6 * * *",
+    "defaultAutoApprove": false
+  },
+  {
+    "name": "Campaign page monitoring",
+    "category": "campaign_page",
+    "taskType": "generic",
+    "targetPattern": "https://example.com/campaigns/diwali",
+    "extractors": { "headline": "h1", "offer_text": ".offer", "cta": ".cta" },
+    "defaultSchedule": "",
+    "defaultAutoApprove": false
+  }
+]

@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import api, { getErrorMessage } from '../api/client.js';
+import api, { getErrorMessage, downloadExport } from '../api/client.js';
 import Badge, { runTone } from '../components/Badge.jsx';
 import Icon from '../components/Icons.jsx';
 import { PageHeader, Button, Card, ErrorBanner, EmptyState } from '../components/ui.jsx';
@@ -12,6 +12,12 @@ const FILTERS = [
   { key: 'FAILED', label: 'Failed' },
   { key: 'RUNNING', label: 'Running' },
   { key: 'AWAITING_APPROVAL', label: 'Pending' },
+  { key: 'PLANNED', label: 'Planned' },
+  { key: 'APPROVED', label: 'Approved' },
+  { key: 'EXTRACTING', label: 'Extracting' },
+  { key: 'COMPARING', label: 'Comparing' },
+  { key: 'REASONING', label: 'Reasoning' },
+  { key: 'REJECTED', label: 'Rejected' },
 ];
 
 export default function Runs() {
@@ -76,20 +82,40 @@ export default function Runs() {
                   <th className="px-4 py-3 font-medium">Started</th>
                   <th className="px-4 py-3 font-medium">Duration</th>
                   <th className="px-4 py-3 font-medium">Summary</th>
+                  <th className="px-4 py-3 font-medium text-right">Export</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {filtered.map((r) => (
-                  <tr key={r._id} className="hover:bg-gray-50 cursor-pointer" onClick={() => (window.location.href = `/runs/${r._id}`)}>
+                  <tr key={r._id} className="hover:bg-gray-50">
                     <td className="px-4 py-3">
-                      <div className="font-medium text-gray-800">{r.task?.name || 'Task'}</div>
+                      <Link to={`/runs/${r._id}`} className="font-medium text-gray-800 hover:text-brand-600">{r.task?.name || 'Task'}</Link>
                       <div className="text-xs text-gray-400">{timeAgo(r.createdAt)}</div>
                     </td>
-                    <td className="px-4 py-3"><Badge tone={runTone(r.status)}>{r.status}</Badge></td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <Badge tone={runTone(r.status)}>{r.status}</Badge>
+                        {r.errorCode && <Badge tone="red" size="xs">{r.errorCode}</Badge>}
+                      </div>
+                    </td>
                     <td className="px-4 py-3 text-gray-600 capitalize">{r.trigger}</td>
                     <td className="px-4 py-3 text-gray-600">{r.startedAt ? new Date(r.startedAt).toLocaleString() : '—'}</td>
                     <td className="px-4 py-3 text-gray-600">{durationMs(r.startedAt, r.finishedAt) || '—'}</td>
                     <td className="px-4 py-3 text-gray-500 max-w-xs truncate">{r.summary || r.error || '—'}</td>
+                    <td className="px-4 py-3 text-right whitespace-nowrap">
+                      <button
+                        onClick={async (e) => { e.stopPropagation(); await downloadExport(`/exports/runs/${r._id}?format=csv`, `run-${r._id}.csv`); }}
+                        className="text-xs text-brand-600 hover:underline mr-2"
+                      >
+                        CSV
+                      </button>
+                      <button
+                        onClick={async (e) => { e.stopPropagation(); await downloadExport(`/exports/runs/${r._id}?format=json`, `run-${r._id}.json`); }}
+                        className="text-xs text-brand-600 hover:underline"
+                      >
+                        JSON
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>

@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: mmt-webops-ai-server
+    runtime: node
+    plan: starter
+    buildCommand: npm install --workspace server && npx --workspace server playwright install --with-deps chromium || npx --workspace server playwright install chromium
+    startCommand: npm run start --workspace server
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: MONGODB_URI
+        sync: false
+      - key: CLIENT_ORIGIN
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DEMO_MODE
+        value: true
+      - key: BROWSER_HEADLESS
+        value: true
+      - key: ENABLE_SCHEDULER
+        value: true
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemma-4-26b-a4b-it
+      - key: COMPLETION_WEBHOOK_URL
+        sync: false

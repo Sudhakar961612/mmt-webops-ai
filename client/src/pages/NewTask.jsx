@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import api, { getErrorMessage } from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
@@ -25,6 +25,7 @@ const field = 'mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm f
 
 export default function NewTask() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { can } = useAuth();
   const toast = useToast();
   const [demoPages, setDemoPages] = useState([]);
@@ -32,11 +33,18 @@ export default function NewTask() {
   const [step, setStep] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [form, setForm] = useState({ name: '', description: '', type: 'hotel_monitor', target: 'demo:hotels', customUrl: '', fields: '', schedule: '', autoApprove: false });
+  const [form, setForm] = useState({ name: '', description: '', type: 'hotel_monitor', target: 'demo:hotels', customUrl: '', fields: '', schemaId: '', schedule: '', autoApprove: false });
+  const [schemas, setSchemas] = useState([]);
+  const [testHtml, setTestHtml] = useState('');
+  const [testResult, setTestResult] = useState(null);
+  const [testBusy, setTestBusy] = useState(false);
 
   useEffect(() => {
     api.get('/demo').then((d) => setDemoPages(d.data.data.pages)).catch((e) => setDemoError(getErrorMessage(e)));
-  }, []);
+    api.get('/schemas').then((d) => setSchemas(d.data.data || d.data.data.schemas || [])).catch(() => {});
+    const preset = searchParams.get('schemaId');
+    if (preset) setForm((f) => ({ ...f, schemaId: preset }));
+  }, [searchParams]);
 
   const target = form.target.startsWith('custom:') ? form.customUrl.trim() : form.target;
   const fieldKeys = useMemo(() => form.fields.split(/[\n,]/).map((s) => s.trim()).filter(Boolean), [form.fields]);
@@ -51,6 +59,7 @@ export default function NewTask() {
       const { data } = await api.post('/tasks', {
         name: form.name, description: form.description, type: form.type, target,
         schedule: form.schedule, autoApprove: form.autoApprove,
+        extractionSchema: form.schemaId || null,
         extractors: fieldKeys.length ? Object.fromEntries(fieldKeys.map((k) => [k, `#${k}`])) : {},
       });
       toast.success('Task created.');
@@ -59,6 +68,23 @@ export default function NewTask() {
       setError(getErrorMessage(err, 'Could not create task'));
     } finally {
       setBusy(false);
+    }
+  };
+
+  const testExtraction = async () => {
+    setTestBusy(true);
+    setTestResult(null);
+    try {
+      const fieldDefs = fieldKeys.map((k) => ({ name: k, type: 'string', selector: `#${k}` }));
+      const payload = form.schemaId
+        ? { schemaId: form.schemaId, ...(testHtml ? { html: testHtml } : { record: Object.fromEntries(fieldKeys.map((k) => [k, k])) }) }
+        : { fields: fieldDefs, ...(testHtml ? { html: testHtml } : { record: Object.fromEntries(fieldKeys.map((k) => [k, `sample ${k}`])) }) };
+      const { data } = await api.post('/extract', payload);
+      setTestResult(data.data);
+    } catch (err) {
+      setTestResult({ error: getErrorMessage(err, 'Test failed') });
+    } finally {
+      setTestBusy(false);
     }
   };
 
@@ -110,13 +136,52 @@ export default function NewTask() {
           </div>
         )}
         {step === 2 && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Expected fields</label>
-            <textarea className={field} rows="4" value={form.fields} onChange={(e) => setForm({ ...form, fields: e.target.value })}
-              placeholder={'One field per line (or comma separated)\nprice\nroomsAvailable\nbestDeal'} />
-            <p className="text-xs text-gray-500 mt-2">
-              {fieldKeys.length ? `Fields to monitor: ${fieldKeys.join(', ')}` : "Leave empty to use the page's embedded data automatically."}
-            </p>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Extraction schema (optional)</label>
+              <select className={field} value={form.schemaId} onChange={(e) => setForm({ ...form, schemaId: e.target.value })}>
+                <option value="">No schema — use embedded data / selectors</option>
+                {(Array.isArray(schemas) ? schemas : schemas?.schemas || []).map((s) => (
+                  <option key={s._id} value={s._id}>{s.name} ({s.schemaType || s.type || 'custom'} · v{s.version || 1})</option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-500 mt-1">Reusable typed fields with validation + confidence. Manage in Extraction Schemas.</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Expected fields</label>
+              <textarea className={field} rows="4" value={form.fields} onChange={(e) => setForm({ ...form, fields: e.target.value })}
+                placeholder={'One field per line (or comma separated)\nprice\nroomsAvailable\nbestDeal'} />
+              <p className="text-xs text-gray-500 mt-2">
+                {fieldKeys.length ? `Fields to monitor: ${fieldKeys.join(', ')}` : "Leave empty to use the page's embedded data automatically."}
+              </p>
+            </div>
+            <div className="border border-gray-200 rounded-xl p-4 bg-gray-50 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-gray-700">Test extraction (POST /api/extract)</span>
+                <Button type="button" variant="secondary" size="sm" onClick={testExtraction} disabled={testBusy}>
+                  {testBusy ? 'Testing…' : 'Run test'}
+                </Button>
+              </div>
+              <textarea className={field} rows="3" value={testHtml} onChange={(e) => setTestHtml(e.target.value)}
+                placeholder="Optional: paste sample HTML to test selectors, or leave empty to normalize a sample record." />
+              {testResult && (
+                <div className="text-xs">
+                  {testResult.error ? (
+                    <p className="text-red-600">{testResult.error}</p>
+                  ) : (
+                    <div className="space-y-1">
+                      <p className="text-gray-600">Confidence: <span className="font-medium text-gray-800">{typeof testResult.confidence === 'number' ? `${Math.round(testResult.confidence * 100)}%` : '—'}</span></p>
+                      <pre className="bg-white border border-gray-200 rounded-lg p-2 overflow-x-auto max-h-40">{JSON.stringify(testResult.data ?? testResult.results ?? testResult, null, 2)}</pre>
+                      {(testResult.warnings?.length > 0) && (
+                        <ul className="list-disc list-inside text-amber-700">
+                          {testResult.warnings.slice(0, 5).map((w, i) => <li key={i}>{w.field ? `${w.field}: ` : ''}{w.issue}</li>)}
+                        </ul>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         )}
         {step === 3 && (
@@ -164,6 +229,7 @@ export default function NewTask() {
                 ['Type', TYPES.find((t) => t.value === form.type)?.label],
                 ['Target', target],
                 ['Fields', fieldKeys.join(', ') || 'Auto (embedded data)'],
+                ['Schema', (Array.isArray(schemas) ? schemas : schemas?.schemas || []).find((s) => s._id === form.schemaId)?.name || 'None'],
                 ['Schedule', form.schedule || 'None (manual)'],
                 ['Approval', form.autoApprove ? 'Auto-approve' : 'Requires approval'],
               ].map(([k, v]) => (

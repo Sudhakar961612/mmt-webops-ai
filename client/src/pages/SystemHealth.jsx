@@ -63,11 +63,15 @@ export default function SystemHealth() {
             </Card>
             <Card title="Execution & intelligence">
               <SystemItem icon="runs" label="Playwright / Browser" status={data.playwright?.status}
-                detail={`headless: ${data.playwright?.headless ? 'yes' : 'no'}`} />
+                detail={`headless: ${data.playwright?.headless ? 'yes' : 'no'}${data.playwright?.retries != null ? ` · retries: ${data.playwright.retries}` : ''}${data.playwright?.timeoutMs != null ? ` · timeout: ${data.playwright.timeoutMs}ms` : ''}`} />
               <SystemItem icon="sparkle" label="AI Provider" status={data.ai?.configured ? 'CONFIGURED' : 'NOT_CONFIGURED'}
                 detail={data.ai?.configured ? `${data.ai?.provider} · ${data.ai?.model}` : 'Deterministic fallback active'} />
               <SystemItem icon="layers" label="Demo Mode" status={data.demoMode ? 'ON' : 'OFF'}
                 detail="Playwright runs against local demo pages" />
+              <SystemItem icon="database" label="Screenshot cap" status="CONNECTED"
+                detail={data.extraction?.screenshotMaxBytes ? `max ${Math.round(data.extraction.screenshotMaxBytes / 1024)} KB stored in MongoDB` : 'Not reported'} />
+              <SystemItem icon="link" label="Completion webhook" status={data.notifications?.webhookConfigured ? 'CONFIGURED' : 'NOT_CONFIGURED'}
+                detail={data.notifications?.webhookConfigured ? 'Slack-compatible POST on run completion' : 'Audit-log notifications only'} />
             </Card>
           </div>
 

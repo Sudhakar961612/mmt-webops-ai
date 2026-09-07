@@ -46,11 +46,18 @@ function ItemRow({ item, rowIndex, columns }) {
 /**
  * Human-readable, adaptive extracted-data table (Phase 6).
  * Columns adapt to the task type (hotel vs flight vs generic scalar).
+ * Optional fieldMeta: { [field]: { confidence: 0..1, issues: [] } } renders
+ * a confidence column + per-field warning hints.
  */
-export default function ExtractedDataTable({ data = {}, type = 'generic' }) {
+export default function ExtractedDataTable({ data = {}, type = 'generic', fieldMeta = null }) {
   if (!data || typeof data !== 'object') {
     return <p className="px-5 py-6 text-sm text-gray-400">No extracted data for this run.</p>;
   }
+
+  const confOf = (k) => {
+    const c = fieldMeta?.[k]?.confidence;
+    return typeof c === 'number' ? c : null;
+  };
 
   const columns = TYPE_COLUMNS[type] || null;
 
@@ -90,14 +97,28 @@ export default function ExtractedDataTable({ data = {}, type = 'generic' }) {
   if (!entries.length) {
     return <p className="px-5 py-6 text-sm text-gray-400">No extractable fields in this snapshot.</p>;
   }
+  const showConf = fieldMeta && entries.some(([k]) => confOf(k) !== null);
   return (
-    <div className="grid sm:grid-cols-2 gap-px bg-gray-100">
-      {entries.map(([k, v]) => (
-        <div key={k} className="bg-white px-4 py-2.5 flex items-center justify-between gap-3">
-          <span className="text-xs uppercase tracking-wide text-gray-400 capitalize">{k}</span>
-          <span className="text-sm text-gray-700 font-medium truncate text-right">{display(v)}</span>
-        </div>
-      ))}
+    <div>
+      <div className="grid sm:grid-cols-2 gap-px bg-gray-100">
+        {entries.map(([k, v]) => {
+          const c = confOf(k);
+          const issues = fieldMeta?.[k]?.issues || [];
+          return (
+            <div key={k} className="bg-white px-4 py-2.5 flex items-center justify-between gap-3">
+              <span className="text-xs uppercase tracking-wide text-gray-400 capitalize">
+                {k}
+                {issues.length > 0 && <span className="block normal-case text-amber-700">⚠ {issues[0]}</span>}
+              </span>
+              <span className="text-sm text-gray-700 font-medium truncate text-right">
+                {display(v)}
+                {c !== null && <span className="block text-xs font-normal text-gray-400">{Math.round(c * 100)}%</span>}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+      {showConf && <p className="px-4 py-2 text-xs text-gray-400">Confidence from backend field validation.</p>}
     </div>
   );
 }

@@ -68,6 +68,14 @@ export const systemHealth = asyncHandler(async (_req, res) => {
         installed: isBrowserAvailable(),
         status: isBrowserAvailable() ? 'CONNECTED' : 'ERROR',
         headless: env.BROWSER_HEADLESS,
+        retries: env.BROWSER_RETRIES,
+        timeoutMs: env.BROWSER_TIMEOUT_MS,
+      },
+      extraction: {
+        screenshotMaxBytes: env.SCREENSHOT_MAX_BYTES,
+      },
+      notifications: {
+        webhookConfigured: Boolean(env.COMPLETION_WEBHOOK_URL),
       },
       scheduler: {
         enabled: scheduler.enabled,

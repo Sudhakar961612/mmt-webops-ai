@@ -65,7 +65,7 @@ export default function ChangeDetection({ changes }) {
                   </span>
                 );
               })()}
-              {c.severity === 'high' && (
+              {String(c.severity || '').toLowerCase() === 'high' && (
                 <span className='text-xs text-amber-700'>
                   Business-impacting change — review recommended
                 </span>

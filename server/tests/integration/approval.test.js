@@ -15,6 +15,8 @@ vi.mock('../../src/services/browser/playwrightService.js', () => {
     withBrowser: async (fn) => fn(fakePage),
     gotoPage: async () => {},
     takeScreenshot: async () => Buffer.from('fake-image'),
+    dismissOverlays: async () => {},
+    classifyBrowserError: (err) => ({ code: 'BROWSER_UNKNOWN', retryable: false, statusCode: 500 }),
     isBrowserAvailable: () => true,
   };
 });

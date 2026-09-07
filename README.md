@@ -499,8 +499,16 @@ Pre-created sample tasks:
 
 ### Runs (Execution)
 - `GET /api/runs` — List execution history
+- `POST /api/runs` — Start run for `{taskId}` (manager/admin; spec §7.3 alias)
 - `GET /api/runs/:id` — Get run details & status
 - `POST /api/runs/:runId/approve` — Approve & execute (manager only)
+
+### Spec workflow aliases (§7.3)
+- `POST /api/plans` — Generate plan for `{taskId}`
+- `POST /api/extract` — Extract/normalize from `{html, schemaId|fields}` or `{record, fields}` with confidence
+- `POST /api/compare` — Diff `{previous, current}` or snapshot ids
+- `POST /api/complete` — Regenerate insight + notify for `{runId}`
+- `GET /api/exports/runs/:id?format=json|csv` — Export completed findings
 
 ### Templates ← NEW
 - `POST /api/templates` — Create reusable template

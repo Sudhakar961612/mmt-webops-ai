@@ -18,6 +18,8 @@ import templateRoutes from './routes/template.routes.js';
 import sourceRoutes from './routes/source.routes.js';
 import schemaRoutes from './routes/schema.routes.js';
 import systemRoutes from './routes/system.routes.js';
+import opsRoutes from './routes/ops.routes.js';
+import exportRoutes from './routes/export.routes.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const demoPagesDir = path.join(__dirname, 'services', 'browser', 'demoPages');
@@ -85,6 +87,9 @@ export function createApp() {
   app.use('/api/sources', sourceRoutes);
   app.use('/api/schemas', schemaRoutes);
   app.use('/api/system', systemRoutes);
+  // Spec §7.3 aliases: POST /api/plans|extract|compare|complete (see ops.routes).
+  app.use('/api', opsRoutes);
+  app.use('/api/exports', exportRoutes);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

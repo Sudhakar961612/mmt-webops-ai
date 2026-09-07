@@ -16,6 +16,7 @@ export const NAV = {
     { to: '/schemas', label: 'Extraction Schemas', icon: 'schema' },
     { to: '/audit', label: 'Audit Log', icon: 'audit' },
     { to: '/health', label: 'System Health', icon: 'health' },
+    { to: '/ops', label: 'Ops Lab', icon: 'runs' },
     { to: '/demo', label: 'Demo Pages', icon: 'demo' },
   ],
   manager: [
@@ -30,6 +31,7 @@ export const NAV = {
     { to: '/templates', label: 'Task Templates', icon: 'template' },
     { to: '/schemas', label: 'Extraction Schemas', icon: 'schema' },
     { to: '/audit', label: 'Audit Log', icon: 'audit' },
+    { to: '/ops', label: 'Ops Lab', icon: 'runs' },
   ],
   analyst: [
     { to: '/', label: 'Dashboard', icon: 'home', end: true },
@@ -66,6 +68,7 @@ export const ROUTE_ROLES = {
   '/schemas': ['admin', 'manager'],
   '/audit': ['admin', 'manager', 'analyst'],
   '/health': ['admin'],
+  '/ops': ['admin', 'manager'],
   '/demo': ['admin', 'manager', 'analyst'],
   '/users': ['admin'],
 };
