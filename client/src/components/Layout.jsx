@@ -3,19 +3,26 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { NAV, roleLabel } from '../config/nav.js';
 import Icon from './Icons.jsx';
-import api from '../api/client.js';
+import api, { isApiConfigured, isLocalhost, apiBaseLabel } from '../api/client.js';
 
 export default function Layout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [ai, setAi] = useState(null);
+  const [apiDown, setApiDown] = useState(false);
 
   useEffect(() => {
     let alive = true;
-    api.get('/system/status').then((res) => alive && setAi(res.data.data?.ai?.configured)).catch(() => {});
+    api.get('/system/status')
+      .then((res) => alive && setAi(res.data.data?.ai?.configured))
+      .catch(() => alive && setApiDown(true));
     return () => { alive = false; };
   }, []);
+
+  // Production misconfiguration guard: without VITE_API_BASE_URL the app calls
+  // a relative /api that only exists via Vite's localhost proxy.
+  const showApiConfigWarning = !isApiConfigured && !isLocalhost;
 
   const handleLogout = () => { logout(); navigate('/login'); };
   const items = NAV[user?.role] || NAV.analyst;
@@ -128,6 +135,18 @@ export default function Layout() {
           </div>
         </header>
       {/* __TOPBAR__ */}
+        {showApiConfigWarning && (
+          <div className="bg-amber-50 border-b border-amber-200 px-4 sm:px-6 py-2.5 text-xs text-amber-800">
+            Frontend is not pointed at a backend: <span className="font-mono">{apiBaseLabel}</span>.
+            Set <span className="font-mono">VITE_API_BASE_URL=https://&lt;backend&gt;/api</span> in the hosting provider and redeploy.
+          </div>
+        )}
+        {apiDown && (
+          <div className="bg-red-50 border-b border-red-200 px-4 sm:px-6 py-2.5 text-xs text-red-700">
+            Cannot reach the backend API at <span className="font-mono">{apiBaseLabel}</span>.
+            Check that the backend is running and CORS allows this origin.
+          </div>
+        )}
         <main className="flex-1 w-full max-w-[1400px] mx-auto px-4 sm:px-6 py-6">
           <Outlet />
         </main>

@@ -2,8 +2,14 @@ import axios from 'axios';
 
 // Locally, Vite proxies the relative path to the Express server. In production,
 // set VITE_API_BASE_URL to the deployed backend URL, including its /api suffix.
-const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '');
+export const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '');
 const api = axios.create({ baseURL: configuredApiBaseUrl || '/api' });
+
+// True when the build points at a real backend. On a static host (Vercel/Netlify)
+// the '/api' fallback does NOT exist — Vite's dev proxy only works on localhost.
+export const isApiConfigured = Boolean(configuredApiBaseUrl);
+export const isLocalhost = ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
+export const apiBaseLabel = configuredApiBaseUrl || `${window.location.origin}/api (fallback — dev proxy only)`;
 
 // Attach the JWT to every request.
 api.interceptors.request.use((config) => {
