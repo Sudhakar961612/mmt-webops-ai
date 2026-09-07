@@ -24,6 +24,7 @@ const demoPagesDir = path.join(__dirname, 'services', 'browser', 'demoPages');
 
 export function createApp() {
   const app = express();
+  app.set('trust proxy', 1);
 
   app.disable('x-powered-by');
   app.use(
@@ -65,7 +66,10 @@ export function createApp() {
 
   // Health check.
   app.get('/health', (_req, res) => {
-    res.json({ success: true, data: { status: 'ok', demoMode: env.DEMO_MODE, time: new Date().toISOString() } });
+    res.json({
+      success: true,
+      data: { status: 'ok', demoMode: env.DEMO_MODE, time: new Date().toISOString() },
+    });
   });
 
   // API routes.
