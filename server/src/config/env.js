@@ -32,10 +32,8 @@ export const env = {
   BROWSER_HEADLESS: bool(process.env.BROWSER_HEADLESS, false),
   BROWSER_EXECUTABLE_PATH: process.env.BROWSER_EXECUTABLE_PATH || '',
   ENABLE_SCHEDULER: bool(process.env.ENABLE_SCHEDULER, true),
-  AI_PROVIDER: process.env.AI_PROVIDER || 'openai',
-  AI_BASE_URL: process.env.AI_BASE_URL || 'https://api.openai.com/v1',
-  AI_API_KEY: process.env.AI_API_KEY || '',
-  AI_MODEL: process.env.AI_MODEL || 'gpt-4o-mini',
-  AI_TEMPERATURE: parseFloat(process.env.AI_TEMPERATURE || '0.2'),
+  GEMINI_API_KEY: process.env.GEMINI_API_KEY || '',
+  GEMINI_MODEL: process.env.GEMINI_MODEL || 'gemma-4-26b-a4b-it',
+  GEMINI_TEMPERATURE: parseFloat(process.env.GEMINI_TEMPERATURE || '0.2'),
   LOG_LEVEL: process.env.LOG_LEVEL || 'info',
 };

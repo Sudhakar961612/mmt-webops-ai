@@ -51,7 +51,7 @@ describe('Run approval state machine', () => {
   let viewerToken;
 
   beforeAll(async () => {
-    env.AI_API_KEY = ''; // keep tests offline (no real AI calls)
+    env.GEMINI_API_KEY = ''; // keep tests offline (no real AI calls)
     const uri = await startMemoryMongo();
     await connectDB(uri);
     app = createApp();

@@ -21,7 +21,7 @@ async function bootstrap() {
     await ensureDemoPages();
     const server = app.listen(env.PORT, () => {
       logger.info(
-        { port: env.PORT, demoMode: env.DEMO_MODE, aiConfigured: Boolean(env.AI_API_KEY) },
+        { port: env.PORT, demoMode: env.DEMO_MODE, aiConfigured: Boolean(env.GEMINI_API_KEY) },
         'mmt-webops-ai server started'
       );
     });

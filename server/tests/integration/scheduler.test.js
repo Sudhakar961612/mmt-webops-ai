@@ -13,7 +13,7 @@ describe('Scheduler duplicate-approval protection', () => {
   let owner;
 
   beforeAll(async () => {
-    env.AI_API_KEY = ''; // keep tests offline (no real AI calls)
+    env.GEMINI_API_KEY = ''; // keep tests offline (no real AI calls)
     const uri = await startMemoryMongo();
     await connectDB(uri);
     const hashed = await bcrypt.hash(PASSWORD, 4);

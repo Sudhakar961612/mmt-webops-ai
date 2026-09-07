@@ -1,4 +1,4 @@
-import { generateText } from './aiProvider.js';
+import { generateText } from './geminiProvider.js';
 import logger from '../../utils/logger.js';
 
 /**

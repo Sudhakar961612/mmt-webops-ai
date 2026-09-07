@@ -43,7 +43,7 @@ The Autonomous Web Operations Agent converts repetitive web monitoring work into
 | **Database** | MongoDB · Mongoose · Indexed queries |
 | **Browser Automation** | Playwright (headless Chromium) |
 | **Scheduling** | node-cron (task recurrence) |
-| **AI** | OpenAI-compatible LLM API (GPT-4o-mini) → Deterministic fallback |
+| **AI** | Google Gemini API → Deterministic fallback |
 | **Observability** | Pino structured logging, Audit logs, Metrics |
 | **Testing** | Vitest, Supertest, mongodb-memory-server |
 | **Deployment** | Vercel (frontend), Render (backend), MongoDB Atlas (database) |
@@ -139,7 +139,7 @@ Edit `server/.env`:
 AUTO_MONGODB_MEMORY=true
 
 # AI (leave empty for demo mode with deterministic fallback)
-AI_API_KEY=
+GEMINI_API_KEY=
 
 # Server
 PORT=5000
@@ -188,7 +188,7 @@ This starts:
 - ✅ Task pause/resume
 
 ### Agent Planning & Review
-- ✅ AI-powered plan generation (OpenAI-compatible API)
+- ✅ AI-powered plan generation (Google Gemini API)
 - ✅ Deterministic fallback (works offline)
 - ✅ Rule-based plan validation (completeness, safety)
 - ✅ Risk scoring (0-100)
@@ -277,7 +277,7 @@ This starts:
 - User, AuditLog, Feedback, DemoPage
 
 **External Services (Optional)**
-- LLM Provider (OpenAI-compatible API)
+- LLM Provider (Google Gemini API)
 - Object Storage (S3, GCS for screenshots)
 - Vector DB (Qdrant for semantic search)
 - Email/Notifications (SendGrid, Slack)
@@ -345,7 +345,7 @@ git push origin main
 # 3. Render dashboard → New → Web Service → Select repo
 # - Build: npm install --workspaces
 # - Start: npm start --workspace server
-# - Add env vars (MONGODB_URI, AI_API_KEY, JWT_SECRET)
+# - Add env vars (MONGODB_URI, GEMINI_API_KEY, JWT_SECRET)
 
 # 4. In Vercel → Project → Settings → Environment Variables, add this for
 #    Production (and Preview if you use preview deployments), then redeploy.
@@ -408,7 +408,7 @@ mmt-webops-ai/
 │   │   │   │   ├── plannerService.js # Generate browser steps
 │   │   │   │   ├── reviewerService.js # Validate plan
 │   │   │   │   ├── reasonerService.js # Generate insights
-│   │   │   │   └── aiProvider.js     # LLM API wrapper
+│   │   │   │   └── geminiProvider.js # Gemini API wrapper
 │   │   │   ├── browser/
 │   │   │   │   ├── playwrightService.js # Browser automation
 │   │   │   │   └── demoPages/        # Local HTML demos
@@ -588,10 +588,9 @@ See **[docs/configuration.md](docs/configuration.md)** for complete reference.
 MONGODB_URI=mongodb+srv://user:pass@cluster.mongodb.net/mmt-webops-ai
 AUTO_MONGODB_MEMORY=true  # or false for real MongoDB
 
-# AI (optional, leave empty for demo mode)
-AI_API_KEY=sk-...
-AI_BASE_URL=https://api.openai.com/v1
-AI_MODEL=gpt-4o-mini
+# Gemini (optional; leave empty for deterministic demo mode)
+GEMINI_API_KEY=your-gemini-api-key
+GEMINI_MODEL=gemma-4-26b-a4b-it
 
 # Server
 PORT=5000
@@ -603,7 +602,7 @@ JWT_SECRET=dev-secret-change-in-production
 
 ## 🔗 Resources
 
-- **[OpenAI API](https://platform.openai.com/docs)** — LLM for planning & reasoning
+- **[Gemini API](https://ai.google.dev/gemini-api/docs)** — LLM for planning & reasoning
 - **[Playwright Docs](https://playwright.dev)** — Browser automation
 - **[MongoDB Docs](https://docs.mongodb.com)** — Data storage
 - **[Express.js Guide](https://expressjs.com)** — Backend framework
@@ -664,7 +663,7 @@ mmt-webops-ai/
 │   │   ├── controllers/         # route handlers
 │   │   ├── routes/              # REST endpoints
 │   │   ├── services/
-│   │   │   ├── agent/           # aiProvider, planner, reviewer, reasoner
+│   │   │   ├── agent/           # geminiProvider, planner, reviewer, reasoner
 │   │   │   ├── browser/         # playwright + demoPages (flights, hotels)
 │   │   │   ├── extractionService.js
 │   │   │   ├── comparisonService.js

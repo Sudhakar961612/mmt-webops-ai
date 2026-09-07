@@ -12,7 +12,7 @@ This document summarizes the implementation of the MakeMyTrip Autonomous Web Ope
 | Requirement | Status | Implementation |
 |---|---|---|
 | Task intake with objective, sources, frequency | ✅ Complete | Task model with type, target, extractors, schedule, autoApprove |
-| Agent planning (AI-powered + fallback) | ✅ Complete | plannerService with OpenAI fallback to deterministic planner |
+| Agent planning (AI-powered + fallback) | ✅ Complete | plannerService with Gemini fallback to deterministic planner |
 | Plan review panel with safety scoring | ✅ Complete | reviewerService (rule-based + AI), ReviewerScore tracking |
 | Browser automation (Playwright) | ✅ Complete | playwrightService with headless Chromium, screenshot capture |
 | Structured data extraction | ✅ Complete | extractionService with CSS selectors, JSON parsing, normalization |

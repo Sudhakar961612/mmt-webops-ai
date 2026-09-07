@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import { env } from '../config/env.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
-import { isAiConfigured } from '../services/agent/aiProvider.js';
+import { isGeminiConfigured } from '../services/agent/geminiProvider.js';
 import { isBrowserAvailable } from '../services/browser/playwrightService.js';
 import { getSchedulerStatus } from '../services/schedulerService.js';
 import { ExecutionRun } from '../models/ExecutionRun.js';
@@ -12,7 +12,7 @@ export const systemStatus = asyncHandler(async (_req, res) => {
   res.json({
     success: true,
     data: {
-      ai: { configured: isAiConfigured() },
+      ai: { configured: isGeminiConfigured() },
       scheduler: { enabled: env.ENABLE_SCHEDULER },
       demoMode: env.DEMO_MODE,
       now: new Date().toISOString(),
@@ -58,11 +58,11 @@ export const systemHealth = asyncHandler(async (_req, res) => {
       },
       api: { status: 'CONNECTED' },
       ai: {
-        configured: isAiConfigured(),
-        status: isAiConfigured() ? 'CONFIGURED' : 'NOT_CONFIGURED',
-        provider: env.AI_PROVIDER || 'openai',
-        model: env.AI_MODEL || 'gpt-4o-mini',
-        fallbackActive: !isAiConfigured(),
+        configured: isGeminiConfigured(),
+        status: isGeminiConfigured() ? 'CONFIGURED' : 'NOT_CONFIGURED',
+        provider: 'gemini',
+        model: env.GEMINI_MODEL,
+        fallbackActive: !isGeminiConfigured(),
       },
       playwright: {
         installed: isBrowserAvailable(),

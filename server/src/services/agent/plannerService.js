@@ -1,4 +1,4 @@
-import { generateJson } from './aiProvider.js';
+import { generateJson } from './geminiProvider.js';
 import { resolveTarget, assertNavigableTarget } from '../browser/resolveTarget.js';
 import logger from '../../utils/logger.js';
 
